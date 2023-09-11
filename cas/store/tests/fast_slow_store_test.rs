@@ -136,4 +136,79 @@ mod fast_slow_store_tests {
 
         Ok(())
     }
+
+    #[test]
+    fn get_range_subset_test() {
+        let test = |start_range, end_range| FastSlowStore::get_range_subset(&start_range, &end_range);
+        {
+            // Exact match.
+            let received_range = 0..1;
+            let send_range = 0..1;
+            let expected_results = Some(0..1);
+            assert_eq!(test(received_range, send_range), expected_results);
+        }
+        {
+            // Minus one on received_range.
+            let received_range = 1..4;
+            let send_range = 1..5;
+            let expected_results = Some(0..3);
+            assert_eq!(test(received_range, send_range), expected_results);
+        }
+        {
+            // Minus one on send_range.
+            let received_range = 1..5;
+            let send_range = 1..4;
+            let expected_results = Some(0..3);
+            assert_eq!(test(received_range, send_range), expected_results);
+        }
+        {
+            // Should have already sent all data (start fence post).
+            let received_range = 1..2;
+            let send_range = 0..1;
+            let expected_results = None;
+            assert_eq!(test(received_range, send_range), expected_results);
+        }
+        {
+            // Definiltly already sent data.
+            let received_range = 2..3;
+            let send_range = 0..1;
+            let expected_results = None;
+            assert_eq!(test(received_range, send_range), expected_results);
+        }
+        {
+            // All data should be sent (inside range).
+            let received_range = 3..4;
+            let send_range = 0..100;
+            let expected_results = Some(0..1); // Note: This is relative received_range.start.
+            assert_eq!(test(received_range, send_range), expected_results);
+        }
+        {
+            // Subset of received data should be sent.
+            let received_range = 1..100;
+            let send_range = 3..4;
+            let expected_results = Some(2..3); // Note: This is relative received_range.start.
+            assert_eq!(test(received_range, send_range), expected_results);
+        }
+        {
+            // We are clearly not at the offset yet.
+            let received_range = 0..1;
+            let send_range = 3..4;
+            let expected_results = None;
+            assert_eq!(test(received_range, send_range), expected_results);
+        }
+        {
+            // Not at offset yet (fence post).
+            let received_range = 0..1;
+            let send_range = 1..2;
+            let expected_results = None;
+            assert_eq!(test(received_range, send_range), expected_results);
+        }
+        {
+            // Head part of the received data should be sent.
+            let received_range = 1..3;
+            let send_range = 2..5;
+            let expected_results = Some(1..2);
+            assert_eq!(test(received_range, send_range), expected_results);
+        }
+    }
 }

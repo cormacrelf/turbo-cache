@@ -12,10 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::cmp::{max, min};
+use std::ops::Range;
 use std::pin::Pin;
 use std::sync::Arc;
 
 use async_trait::async_trait;
+use futures::future::ready;
 use futures::{join, FutureExt};
 
 use buf_channel::{make_buf_channel_pair, DropCloserReadHalf, DropCloserWriteHalf};
@@ -80,6 +83,29 @@ impl FastSlowStore {
 
     fn pin_slow_store(&self) -> Pin<&dyn StoreTrait> {
         Pin::new(self.slow_store.as_ref())
+    }
+
+    /// Returns the range of bytes that should be sent given a slice bounds.
+    // TODO(allada) This should be put into utils, as this logic is used elsewhere
+    // in the code.
+    pub fn get_range_subset(received_range: &Range<usize>, send_range: &Range<usize>) -> Option<Range<usize>> {
+        // Protect agains't subtraction overflow.
+        if received_range.start >= received_range.end {
+            return None;
+        }
+        // We are a subset if:
+        // * Our send_range contains one of the received_range bounds.
+        // or
+        // * Our send_range.start is inside the received_range.
+        if !send_range.contains(&received_range.start)
+            && !send_range.contains(&(received_range.end - 1))
+            && !received_range.contains(&send_range.start)
+        {
+            return None;
+        }
+        let start = max(received_range.start, send_range.start) - received_range.start;
+        let end = min(received_range.end, send_range.end) - received_range.start;
+        Some(start..end)
     }
 }
 
@@ -201,6 +227,8 @@ impl StoreTrait for FastSlowStore {
         let (slow_tx, mut slow_rx) = make_buf_channel_pair();
         let data_stream_fut = async move {
             let mut writer_pin = Pin::new(&mut writer);
+            let mut bytes_received = 0;
+            let send_range = offset..(offset + length.unwrap_or(usize::MAX - offset));
             loop {
                 let output_buf = slow_rx
                     .recv()
@@ -214,18 +242,21 @@ impl StoreTrait for FastSlowStore {
                     // the resulting upload to the fast store might fail.
                     let _ = fast_tx.send_eof().await?;
                     let _ = writer_pin.send_eof().await?;
-                    return Ok(());
+                    return Result::<(), Error>::Ok(());
                 }
-                let (fast_tx_res, writer_res) = join!(
-                    fast_tx.send(output_buf.clone()).boxed(),
-                    writer_pin.send(output_buf).boxed(),
-                );
-                if let Err(err) = fast_tx_res {
-                    return Err(err).err_tip(|| "Failed to write to fast store in fast_slow store");
-                }
-                if let Err(err) = writer_res {
-                    return Err(err).err_tip(|| "Failed to write result to writer in fast_slow store");
-                }
+
+                let received_range = bytes_received..(bytes_received + output_buf.len());
+                let writer_fut = if let Some(range) = Self::get_range_subset(&received_range, &send_range) {
+                    writer_pin.send(output_buf.slice(range)).right_future()
+                } else {
+                    ready(Ok(())).left_future()
+                };
+                bytes_received = received_range.end;
+
+                let (fast_tx_res, writer_res) = join!(fast_tx.send(output_buf), writer_fut);
+
+                fast_tx_res.err_tip(|| "Failed to write to fast store in fast_slow store")?;
+                writer_res.err_tip(|| "Failed to write result to writer in fast_slow store")?;
             }
         };
 
