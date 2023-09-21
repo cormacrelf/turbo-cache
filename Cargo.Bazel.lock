@@ -1,5 +1,5 @@
 {
-  "checksum": "ab4d365f12cccf08d844992f1bece260d9d2fc782bbe6d68ed8b288ce9bfdf71",
+  "checksum": "ef653649d69f34bf00c3dbd3250705a007c92f948acee67bbb62fae717cd692b",
   "crates": {
     "addr2line 0.20.0": {
       "name": "addr2line",
@@ -2683,6 +2683,10 @@
             {
               "id": "stdext 0.3.1",
               "target": "stdext"
+            },
+            {
+              "id": "tikv-jemallocator 0.5.4",
+              "target": "tikv_jemallocator"
             },
             {
               "id": "tokio 1.29.1",
@@ -10884,6 +10888,129 @@
         "version": "1.0.43"
       },
       "license": "MIT OR Apache-2.0"
+    },
+    "tikv-jemalloc-sys 0.5.4+5.3.0-patched": {
+      "name": "tikv-jemalloc-sys",
+      "version": "0.5.4+5.3.0-patched",
+      "repository": {
+        "Http": {
+          "url": "https://crates.io/api/v1/crates/tikv-jemalloc-sys/0.5.4+5.3.0-patched/download",
+          "sha256": "9402443cb8fd499b6f327e40565234ff34dbda27460c5b47db0db77443dd85d1"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "tikv_jemalloc_sys",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        },
+        {
+          "BuildScript": {
+            "crate_name": "build_script_build",
+            "crate_root": "build.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "tikv_jemalloc_sys",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "crate_features": {
+          "common": [
+            "background_threads_runtime_support"
+          ],
+          "selects": {}
+        },
+        "deps": {
+          "common": [
+            {
+              "id": "libc 0.2.147",
+              "target": "libc"
+            },
+            {
+              "id": "tikv-jemalloc-sys 0.5.4+5.3.0-patched",
+              "target": "build_script_build"
+            }
+          ],
+          "selects": {}
+        },
+        "edition": "2018",
+        "version": "0.5.4+5.3.0-patched"
+      },
+      "build_script_attrs": {
+        "data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "cc 1.0.79",
+              "target": "cc"
+            }
+          ],
+          "selects": {}
+        },
+        "links": "jemalloc"
+      },
+      "license": "MIT/Apache-2.0"
+    },
+    "tikv-jemallocator 0.5.4": {
+      "name": "tikv-jemallocator",
+      "version": "0.5.4",
+      "repository": {
+        "Http": {
+          "url": "https://crates.io/api/v1/crates/tikv-jemallocator/0.5.4/download",
+          "sha256": "965fe0c26be5c56c94e38ba547249074803efd52adfb66de62107d95aab3eaca"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "tikv_jemallocator",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "tikv_jemallocator",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "crate_features": {
+          "common": [
+            "background_threads_runtime_support",
+            "default"
+          ],
+          "selects": {}
+        },
+        "deps": {
+          "common": [
+            {
+              "id": "libc 0.2.147",
+              "target": "libc"
+            },
+            {
+              "id": "tikv-jemalloc-sys 0.5.4+5.3.0-patched",
+              "target": "tikv_jemalloc_sys"
+            }
+          ],
+          "selects": {}
+        },
+        "edition": "2018",
+        "version": "0.5.4"
+      },
+      "license": "MIT/Apache-2.0"
     },
     "time 0.1.45": {
       "name": "time",

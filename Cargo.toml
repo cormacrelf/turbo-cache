@@ -139,6 +139,7 @@ sha2 = "0.10.7"
 shellexpand = "3.1.0"
 shlex = "1.1.0"
 stdext = "0.3.1"
+tikv-jemallocator = "0.5"
 tokio = { version = "1.29.1", features = ["macros", "io-util", "fs", "rt-multi-thread", "parking_lot"] }
 tokio-stream = { version = "0.1.14", features = ["fs", "sync"] }
 tokio-util = { version = "0.7.8", features = ["io", "io-util", "codec"] }

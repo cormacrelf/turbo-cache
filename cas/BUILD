@@ -28,6 +28,7 @@ rust_binary(
         "@crate_index//:parking_lot",
         "@crate_index//:prometheus-client",
         "@crate_index//:axum",
+        "@crate_index//:tikv-jemallocator",
         "@crate_index//:tower",
         "@crate_index//:tokio",
         "@crate_index//:tonic",

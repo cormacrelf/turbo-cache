@@ -29,6 +29,7 @@ json5 = { workspace = true }
 parking_lot = { workspace = true }
 prometheus-client = { workspace = true }
 scopeguard = { workspace = true }
+tikv-jemallocator = { workspace = true }
 tokio = { workspace = true }
 tonic = { workspace = true }
 tower = { workspace = true }

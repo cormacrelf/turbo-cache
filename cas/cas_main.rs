@@ -48,6 +48,13 @@ use metrics_utils::{set_metrics_enabled_for_this_thread, Collector, CollectorSta
 use store::StoreManager;
 use worker_api_server::WorkerApiServer;
 
+#[cfg(not(target_env = "msvc"))]
+use tikv_jemallocator::Jemalloc;
+
+#[cfg(not(target_env = "msvc"))]
+#[global_allocator]
+static GLOBAL: Jemalloc = Jemalloc;
+
 /// Note: This must be kept in sync with the documentation in `PrometheusConfig::path`.
 const DEFAULT_PROMETHEUS_METRICS_PATH: &str = "/metrics";
 
